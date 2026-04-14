@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic Tac Toe - AI Belajar Mandiri</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .game-container {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(4px);
+            border-radius: 40px;
+            padding: 20px;
+            box-shadow: 0 20px 35px rgba(0,0,0,0.3);
+        }
+
+        .score-board {
+            display: flex;
+            justify-content: space-between;
+            gap: 30px;
+            margin-bottom: 20px;
+        }
+
+        .score-card {
+            background: #f4e3c6;
+            border-radius: 20px;
+            padding: 8px 25px;
+            text-align: center;
+            box-shadow: 0 5px 0 #b87c4f;
+            font-weight: bold;
+        }
+
+        .score-card span:first-child {
+            font-size: 18px;
+            color: #5a3e2b;
+        }
+
+        .score-card .score-value {
+            font-size: 32px;
+            color: #2c3e2f;
+            font-weight: 800;
+        }
+
+        .start-area {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        button {
+            background: #f7b05e;
+            border: none;
+            padding: 10px 28px;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 40px;
+            cursor: pointer;
+            transition: 0.2s;
+            box-shadow: 0 4px 0 #9b5e2c;
+            color: #2d2b1f;
+        }
+
+        button:active {
+            transform: translateY(2px);
+            box-shadow: 0 1px 0 #9b5e2c;
+        }
+
+        .symbol-choice {
+            display: flex;
+            gap: 12px;
+            background: #e9d7b4;
+            padding: 8px 20px;
+            border-radius: 60px;
+            align-items: center;
+        }
+
+        .symbol-choice label {
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            width: 450px;
+            height: 450px;
+            background-color: #8b5a2b;
+            border: 8px solid #8b5a2b;
+            border-radius: 20px;
+            overflow: hidden;
+            gap: 6px;
+            padding: 6px;
+        }
+
+        .cell {
+            background-color: #fef0cf;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 70px;
+            font-weight: bold;
+            font-family: 'Courier New', monospace;
+            cursor: pointer;
+            transition: 0.1s linear;
+            border-radius: 12px;
+            color: #4a2a1a;
+            aspect-ratio: 1 / 1;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        .cell.win-highlight {
+            background-color: #c7e9b0;
+            box-shadow: inset 0 0 0 3px #2e7d32;
+        }
+
+        .cell:active {
+            transform: scale(0.97);
+        }
+
+        .info {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+            background: #2c2b26b3;
+            padding: 8px;
+            border-radius: 50px;
+            color: #ffefcf;
+        }
+    </style>
+    <script src="ai-database.js"></script>
+    <script src="ai-logic.js"></script>
+    <script src="ai-learning.js"></script>
+</head>
+<body>
+<div class="game-container">
+    <div class="score-board">
+        <div class="score-card">
+            <span>🧑 PLAYER</span>
+            <div class="score-value" id="playerScore">0</div>
+        </div>
+        <div class="score-card">
+            <span>🤖 AI</span>
+            <div class="score-value" id="aiScore">0</div>
+        </div>
+    </div>
+
+    <!-- Panel Learning Mandiri -->
+    <div class="learning-panel" style="margin-top: 15px; background: #2c2b26b3; border-radius: 20px; padding: 12px; backdrop-filter: blur(4px);">
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="color: #ffefcf; font-weight: bold;">🧠 BELAJAR MANDIRI:</span>
+                <input type="number" id="learnCount" value="100" min="1" max="100000" step="100" 
+                       style="width: 120px; padding: 8px; border-radius: 20px; border: none; text-align: center; font-weight: bold;">
+                <button id="startLearnBtn" style="background: #4caf50; color: white; box-shadow: 0 4px 0 #2e7d32;">▶ MULAI BELAJAR</button>
+                <button id="stopLearnBtn" style="background: #f44336; color: white; box-shadow: 0 4px 0 #c62828;">⏹ STOP</button>
+                <button id="resetDatabaseBtn" style="background: #ff9800; color: white; box-shadow: 0 4px 0 #e65100;">🗑 RESET DATABASE</button>
+            </div>
+        </div>
+        <div id="learningProgress" style="margin-top: 10px; color: #ffefcf; font-size: 13px; font-family: monospace;">
+            Status: Idle | Database: 0 state | Epsilon: 0.30
+        </div>
+        <div id="learningDetail" style="margin-top: 5px; color: #c5e1a5; font-size: 12px;"></div>
+    </div>
+
+    <div class="start-area">
+        <div class="symbol-choice">
+            <span>Pilih simbolmu:</span>
+            <label><input type="radio" name="playerSymbol" value="X" checked> ❌ X</label>
+            <label><input type="radio" name="playerSymbol" value="O"> ⭕ O</label>
+        </div>
+        <button id="startGameBtn">▶ START GAME</button>
+        <button id="resetScoreBtn">🔄 Reset Skor</button>
+    </div>
+
+    <div class="board" id="board">
+        <!-- 9 sel akan dibuat oleh JS -->
+    </div>
+    <div class="info" id="gameInfo">Pilih simbol & tekan START. Atau tekan "MULAI BELAJAR" untuk melatih AI!</div>
+</div>
+
+<script>
+    // ---------- MAIN GAME LOGIC DENGAN LEARNING MODE ----------
+    const db = new AIDatabase();
+    const aiPlayer = new AI(db, {
+        epsilonStart: 0.3,
+        epsilonMin: 0.05,
+        epsilonDecay: 0.995,
+        discountFactor: 0.9
+    });
+
+    // Inisialisasi learning module
+    const learning = new AILearning(db, aiPlayer);
+
+    let boardCells = Array(9).fill('');
+    let gameActive = false;
+    let currentTurn = 'player';
+    let playerSymbol = 'X';
+    let aiSymbol = 'O';
+    let playerScore = 0, aiScore = 0;
+    let roundActive = false;
+
+    // DOM elements
+    const boardEl = document.getElementById('board');
+    const playerScoreEl = document.getElementById('playerScore');
+    const aiScoreEl = document.getElementById('aiScore');
+    const gameInfo = document.getElementById('gameInfo');
+    const startBtn = document.getElementById('startGameBtn');
+    const resetScoreBtn = document.getElementById('resetScoreBtn');
+    const radioX = document.querySelector('input[value="X"]');
+    const radioO = document.querySelector('input[value="O"]');
+
+    // Learning DOM elements
+    const learnCountInput = document.getElementById('learnCount');
+    const startLearnBtn = document.getElementById('startLearnBtn');
+    const stopLearnBtn = document.getElementById('stopLearnBtn');
+    const resetDatabaseBtn = document.getElementById('resetDatabaseBtn');
+    const learningProgress = document.getElementById('learningProgress');
+    const learningDetail = document.getElementById('learningDetail');
+
+    // Helper: buat grid 3x3
+    function createBoardUI() {
+        boardEl.innerHTML = '';
+        for (let i = 0; i < 9; i++) {
+            const cell = document.createElement('div');
+            cell.classList.add('cell');
+            cell.dataset.index = i;
+            cell.textContent = '';
+            cell.addEventListener('click', () => handleCellClick(i));
+            boardEl.appendChild(cell);
+        }
+    }
+
+    // Update tampilan papan
+    function updateBoardUI() {
+        const cells = document.querySelectorAll('.cell');
+        for (let i = 0; i < 9; i++) {
+            cells[i].textContent = boardCells[i];
+            if (boardCells[i] === 'X') cells[i].style.color = '#2c5a2e';
+            else if (boardCells[i] === 'O') cells[i].style.color = '#b43b0b';
+            else cells[i].style.color = '#4a2a1a';
+        }
+    }
+
+    // Update tampilan learning progress
+    function updateLearningUI() {
+        const stats = learning.getStats();
+        const dbInfo = db.getInfo();
+        learningProgress.innerHTML = `Status: ${stats.isLearning ? '🔴 BELAJAR...' : '🟢 Idle'} | Database: ${dbInfo.stateCount} state | Epsilon: ${stats.epsilon.toFixed(4)} | Game: ${stats.progress}`;
+        
+        if (stats.results.wins + stats.results.losses + stats.results.draws > 0) {
+            const total = stats.results.wins + stats.results.losses + stats.results.draws;
+            const winRate = total > 0 ? (stats.results.wins / total * 100).toFixed(1) : 0;
+            learningDetail.innerHTML = `📊 Hasil sesi terakhir: Menang ${stats.results.wins} | Kalah ${stats.results.losses} | Seri ${stats.results.draws} (Win rate: ${winRate}%)`;
+        } else {
+            learningDetail.innerHTML = `💡 Tips: Semakin banyak belajar, AI akan semakin pintar. Coba 1000-10000 game!`;
+        }
+    }
+
+    // Update UI secara periodik
+    setInterval(updateLearningUI, 500);
+
+    // Cek pemenang
+    function checkWinner(board) {
+        const winPatterns = [
+            [0,1,2], [3,4,5], [6,7,8],
+            [0,3,6], [1,4,7], [2,5,8],
+            [0,4,8], [2,4,6]
+        ];
+        for (let pattern of winPatterns) {
+            const [a,b,c] = pattern;
+            if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+                return board[a];
+            }
+        }
+        return null;
+    }
+
+    function isDraw(board) {
+        return board.every(cell => cell !== '');
+    }
+
+    // Akhiri ronde
+    function endRound(winnerSymbol) {
+        roundActive = false;
+        let resultForAI = null;
+
+        if (winnerSymbol === playerSymbol) {
+            playerScore++;
+            playerScoreEl.textContent = playerScore;
+            gameInfo.textContent = '🎉 Kamu menang ronde ini! AI akan belajar...';
+            resultForAI = 'loss';
+        } else if (winnerSymbol === aiSymbol) {
+            aiScore++;
+            aiScoreEl.textContent = aiScore;
+            gameInfo.textContent = '🤖 AI menang ronde ini! Dia semakin pintar.';
+            resultForAI = 'win';
+        } else {
+            gameInfo.textContent = '🤝 Seri! Tidak ada yang mendapat poin.';
+            resultForAI = 'draw';
+        }
+
+        if (resultForAI !== null) {
+            aiPlayer.endGame(resultForAI);
+        }
+
+        if (gameActive) {
+            resetBoardForNewRound();
+            if (playerSymbol === 'X') {
+                currentTurn = 'player';
+                gameInfo.textContent += ' Giliranmu (X) mulai ronde baru!';
+            } else {
+                currentTurn = 'ai';
+                gameInfo.textContent += ' AI (X) mulai ronde baru...';
+                setTimeout(() => {
+                    if (gameActive && currentTurn === 'ai') aiMove();
+                }, 300);
+            }
+            updateBoardUI();
+        }
+    }
+
+    function resetBoardForNewRound() {
+        boardCells = Array(9).fill('');
+        updateBoardUI();
+        roundActive = true;
+        document.querySelectorAll('.cell').forEach(cell => cell.classList.remove('win-highlight'));
+    }
+
+    // Handle klik player
+    function handleCellClick(index) {
+        if (!gameActive || !roundActive) return;
+        if (currentTurn !== 'player') return;
+        if (boardCells[index] !== '') return;
+
+        boardCells[index] = playerSymbol;
+        updateBoardUI();
+
+        const winner = checkWinner(boardCells);
+        if (winner) {
+            endRound(winner);
+            return;
+        }
+        if (isDraw(boardCells)) {
+            endRound(null);
+            return;
+        }
+
+        currentTurn = 'ai';
+        gameInfo.textContent = '🤖 AI sedang berpikir...';
+        setTimeout(() => aiMove(), 200);
+    }
+
+    // AI move
+    function aiMove() {
+        if (!gameActive || !roundActive) return;
+        if (currentTurn !== 'ai') return;
+
+        const boardBefore = [...boardCells];
+        const action = aiPlayer.chooseMove(boardCells);
+        if (action === null) return;
+
+        aiPlayer.recordMove(boardBefore, action);
+        boardCells[action] = aiSymbol;
+        updateBoardUI();
+
+        const winner = checkWinner(boardCells);
+        if (winner) {
+            endRound(winner);
+            return;
+        }
+        if (isDraw(boardCells)) {
+            endRound(null);
+            return;
+        }
+
+        currentTurn = 'player';
+        gameInfo.textContent = 'Giliranmu!';
+    }
+
+    // Start permainan baru
+    function startNewGame(resetScores = true) {
+        if (learning.isLearning) {
+            gameInfo.textContent = '⚠️ AI sedang belajar, tunggu selesai atau STOP dulu!';
+            return;
+        }
+        
+        if (resetScores) {
+            playerScore = 0;
+            aiScore = 0;
+            playerScoreEl.textContent = '0';
+            aiScoreEl.textContent = '0';
+        }
+        
+        playerSymbol = document.querySelector('input[name="playerSymbol"]:checked').value;
+        aiSymbol = (playerSymbol === 'X') ? 'O' : 'X';
+        aiPlayer.setSymbol(aiSymbol);
+
+        boardCells = Array(9).fill('');
+        updateBoardUI();
+        gameActive = true;
+        roundActive = true;
+
+        if (playerSymbol === 'X') {
+            currentTurn = 'player';
+            gameInfo.textContent = 'Permainan dimulai! Kamu (X) duluan.';
+        } else {
+            currentTurn = 'ai';
+            gameInfo.textContent = 'AI mulai duluan sebagai X.';
+            setTimeout(() => {
+                if (gameActive && currentTurn === 'ai') aiMove();
+            }, 300);
+        }
+    }
+
+    // ============ LEARNING EVENT HANDLERS ============
+
+    startLearnBtn.addEventListener('click', () => {
+        if (learning.isLearning) {
+            gameInfo.textContent = '⚠️ AI sedang belajar, tunggu selesai!';
+            return;
+        }
+        
+        let games = parseInt(learnCountInput.value);
+        if (isNaN(games) || games < 1) games = 100;
+        
+        gameInfo.textContent = `🧠 AI mulai belajar ${games} game... Jangan tutup halaman!`;
+        startBtn.disabled = true;
+        startLearnBtn.disabled = true;
+        
+        learning.learn(games, 
+            // Progress callback
+            (progress) => {
+                gameInfo.textContent = `🧠 Belajar: ${progress.current}/${progress.total} game | Win:${progress.wins} Loss:${progress.losses} Draw:${progress.draws} | Epsilon:${progress.epsilon.toFixed(4)}`;
+                updateLearningUI();
+            },
+            // Complete callback
+            (result) => {
+                gameInfo.textContent = `✅ Selesai belajar ${result.total} game! AI sekarang lebih pintar. Silakan main!`;
+                startBtn.disabled = false;
+                startLearnBtn.disabled = false;
+                updateLearningUI();
+                
+                alert(`✨ Belajar selesai!\n\nTotal game: ${result.total}\nMenang: ${result.wins}\nKalah: ${result.losses}\nSeri: ${result.draws}\nWin rate: ${(result.wins/result.total*100).toFixed(1)}%\n\nDatabase sekarang: ${result.stateCount} state terpelajari`);
+            }
+        );
+    });
+
+    stopLearnBtn.addEventListener('click', () => {
+        if (learning.stopLearning()) {
+            gameInfo.textContent = '⏹ Belajar dihentikan. Data yang sudah dipelajari tetap tersimpan!';
+            startBtn.disabled = false;
+            startLearnBtn.disabled = false;
+            updateLearningUI();
+        } else {
+            gameInfo.textContent = 'Tidak ada proses belajar yang berjalan.';
+        }
+    });
+
+    resetDatabaseBtn.addEventListener('click', () => {
+        if (learning.isLearning) {
+            gameInfo.textContent = '⚠️ Hentikan belajar dulu sebelum reset database!';
+            return;
+        }
+        
+        if (confirm('⚠️ PERINGATAN: Reset database akan menghapus SEMUA pengalaman AI! AI akan seperti bayi baru lahir. Lanjutkan?')) {
+            db.reset();
+            aiPlayer.gameCount = 0;
+            aiPlayer.epsilon = aiPlayer.epsilonStart;
+            gameInfo.textContent = '🗑 Database direset! AI sekarang butuh belajar ulang.';
+            updateLearningUI();
+            alert('Database telah direset. AI tidak tahu apa-apa lagi. Gunakan tombol "MULAI BELAJAR" untuk melatihnya!');
+        }
+    });
+
+    // Event listeners game
+    startBtn.addEventListener('click', () => {
+        if (gameActive) {
+            gameActive = false;
+        }
+        startNewGame(true);
+    });
+
+    resetScoreBtn.addEventListener('click', () => {
+        playerScore = 0;
+        aiScore = 0;
+        playerScoreEl.textContent = '0';
+        aiScoreEl.textContent = '0';
+        gameInfo.textContent = 'Skor direset.';
+    });
+
+    // Inisialisasi UI
+    createBoardUI();
+    updateLearningUI();
+    gameInfo.textContent = 'Pilih simbol & tekan START. Atau tekan "MULAI BELAJAR" untuk melatih AI!';
+</script>
+</body>
+  </html>
